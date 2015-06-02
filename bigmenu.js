@@ -24,12 +24,12 @@ Drupal.behaviors.bigmenu = {
 
           // If children have been generated already, just show them again.
           if ($(parentRow).hasClass("bigmenu-generated") && $(parentRow).hasClass("bigmenu-collapsed")) {
-            $('.childOf-' + mlid).css('display', '');
             // Indicate we are expanded now
             $(parentRow)
               .removeClass('bigmenu-collapsed')
               .addClass('bigmenu-expanded');
             $('.hide-show', parentRow).html(Drupal.t('Hide children'));
+            $('.childOf-' + mlid).addClass('bigmenu-show');
 
             return false;
           }
@@ -72,17 +72,14 @@ Drupal.behaviors.bigmenu = {
                   var previousRow = parentRow;
                   $('tr', new_form).each(function(index) {
                       if ($('th', this).length == 0) {
-                        $(this).addClass('childOf-' + mlid)
-                          .css('opacity', 0.2)
-                        //.fadeTo(0, 0.5).css('opacity', 0.1)
+                        $(this).addClass('childOf-' + mlid + ' bigmenu-child-item')
                         $(previousRow).after(this)
-
-                        // TODO - an animation of some sort - tr,td cannot set height however
                         previousRow = this
                       }
                   });
-                  $('.childOf-' + mlid)
-                    .animate({opacity:'1'}, 1500)
+                  window.setTimeout(function() {
+                    $('.childOf-' + mlid).addClass('bigmenu-show');
+                  }, 10);
                     // don't use fadeIn because tht acts odd on table elements
 
                   // Attach any required behaviors to the table
@@ -125,7 +122,7 @@ Drupal.behaviors.bigmenu = {
           else {
             // This item was already expanded, so a click means it should close.
             // That means hide the kids
-            $('.childOf-' + mlid).css('display', 'none');
+            $('.childOf-' + mlid).removeClass('bigmenu-show');
 
             // Indicate we are closed now
             $(parentRow)

@@ -17,6 +17,26 @@
 .bigmenu-expanded .bigmenu-toggle{
   background: url(menu-expanded.gif) no-repeat 0 center;
 }
+
+.bigmenu-child-item {
+  height: 0;
+  opacity: 0;
+  position: absolute;
+  visibility: hidden;
+  z-index: -1;
+  transition: opacity 0.5s ease;
+  -webkit-transition: opacity 0.5s ease;
+}
+.bigmenu-child-item.bigmenu-show {
+  position: inherit;
+  transition: none;
+  visibility: visible;
+  -webkit-transition: none;
+  height: auto;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  -webkit-transition: opacity 0.5s ease;
+}
 /* this is slightly more specific, as it overrides the other two if it's on */
 .bigmenu-processing .bigmenu-childindictor .bigmenu-toggle{
   background: url(menu-processing.gif) no-repeat 0 center;
