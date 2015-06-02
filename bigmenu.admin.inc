@@ -31,6 +31,16 @@ function bigmenu_overview_form($form, &$form_state, $menu, $depth = 1) {
   foreach ($result as $item) {
     $links[] = $item;
   }
+  $link_count = db_query("SELECT COUNT(*) AS counter FROM {menu_links} WHERE menu_name = :menu AND link_path NOT LIKE :link_path", array(':menu' => $menu['menu_name'], ':link_path' => '%\%%'))->fetchObject();
+  $counter = intval($link_count->counter / 2 ) + 1;
+  $weight_info = db_query("SELECT MAX(weight) AS max_weight, MIN(weight) as min_weight FROM {menu_links} WHERE menu_name = :menu", array(':menu' => $menu['menu_name']))->fetchObject();
+  $fallback = max(abs($weight_info->min_weight), abs($weight_info->max_weight)) + 1;
+  $delta = $fallback > $counter ? $fallback : $counter;
+  if ($delta < 50) {
+    // Old hardcoded value.
+    $delta = 50;
+  }
+
   $tree = menu_tree_data($links);
   $node_links = array();
   menu_tree_collect_node_links($tree, $node_links);
@@ -40,7 +50,7 @@ function bigmenu_overview_form($form, &$form_state, $menu, $depth = 1) {
   $menu_admin = FALSE;
 
   // If the user doesn't have the permission to use big menu, use core's form
-  $new_form = user_access('use bigmenu') ? _bigmenu_overview_tree_form($tree) : _menu_overview_tree_form($tree);
+  $new_form = user_access('use bigmenu') ? _bigmenu_overview_tree_form($tree, 0, $delta) : _menu_overview_tree_form($tree, $delta);
   $cached_mlids = bigmenu_get_cached_mlids($form_state);
   $new_form = array_merge($new_form, $cached_mlids);
 
@@ -107,6 +117,16 @@ function bigmenu_slice_form($form, &$form_state, $menu, $menu_link, $depth = 2) 
   foreach ($result as $item) {
     $links[] = $item;
   }
+    $link_count = db_query("SELECT COUNT(*) AS counter FROM {menu_links} WHERE menu_name = :menu AND link_path NOT LIKE :link_path", array(':menu' => $menu['menu_name'], ':link_path' => '%\%%'))->fetchObject();
+  $counter = intval($link_count->counter / 2 ) + 1;
+  $weight_info = db_query("SELECT MAX(weight) AS max_weight, MIN(weight) as min_weight FROM {menu_links} WHERE menu_name = :menu", array(':menu' => $menu['menu_name']))->fetchObject();
+  $fallback = max(abs($weight_info->min_weight), abs($weight_info->max_weight)) + 1;
+  $delta = $fallback > $counter ? $fallback : $counter;
+  if ($delta < 50) {
+    // Old hardcoded value.
+    $delta = 50;
+  }
+
   $tree = menu_tree_data($links);
 
   $node_links = array();
@@ -122,7 +142,7 @@ function bigmenu_slice_form($form, &$form_state, $menu, $menu_link, $depth = 2) 
   }
   // (there was only one, but I didn't know its name)
 
-  $form = _bigmenu_overview_tree_form($tree, $depth);
+  $form = _bigmenu_overview_tree_form($tree, $depth, $delta);
 
   $form['#theme'] = 'bigmenu_overview_form';
   $form['#menu'] =  $menu;
@@ -215,7 +235,7 @@ function bigmenu_settings($form, &$form_state) {
  *
  * Copied from core, and modified to limit recursion
  */
-function _bigmenu_overview_tree_form($tree, $depth = 0) {
+function _bigmenu_overview_tree_form($tree, $depth = 0, $delta = 50) {
   $form = &drupal_static(__FUNCTION__, array('#tree' => TRUE));
   foreach ($tree as $data) {
     $item = $data['link'];
@@ -233,7 +253,7 @@ function _bigmenu_overview_tree_form($tree, $depth = 0) {
       );
       $form[$mlid]['weight'] = array(
         '#type' => 'weight',
-        '#delta' => 50,
+        '#delta' => $delta,
         '#default_value' => $item['weight'],
         '#title_display' => 'invisible',
         '#title' => t('Weight for @title', array('@title' => $item['title'])),
@@ -262,7 +282,7 @@ function _bigmenu_overview_tree_form($tree, $depth = 0) {
 
     if ($data['below']) {
       if ($depth > 0) {
-        _bigmenu_overview_tree_form($data['below'], $depth - 1);
+        _bigmenu_overview_tree_form($data['below'], $depth - 1, $delta);
       }
       else {
         // 'below' contains both immediate children and something else
